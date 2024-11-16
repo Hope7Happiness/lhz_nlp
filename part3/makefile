@@ -61,7 +61,7 @@ train_rnn_zhh_2:
 	bash train.sh rnn 1 5000000 0.0003 1024
 
 train_rnn_zhh_3:
-	bash train.sh rnn 2 5000000 0.0003 2048
+	bash train.sh rnn 2 5000000 0.0003 512
 
 train_rnn_zhh_2_test:
 	bash train.sh rnn 1 5000 0.0003 1024

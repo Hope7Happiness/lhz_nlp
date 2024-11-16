@@ -89,9 +89,10 @@ def remove_additional_checkpt(output_dir):
             os.remove(os.path.join(output_dir, file))
 
 def load_logs_from_json(output_dir):
-    if os.path.exists(os.path.join(output_dir, 'results.json')):
-        return json.load(open(os.path.join(output_dir, 'results.json')))
-    print('WARNING: can\'t find results.json file at ', output_dir)
+    if output_dir and os.path.exists(output_dir):
+        if os.path.exists(os.path.join(output_dir, 'results.json')):
+            return json.load(open(os.path.join(output_dir, 'results.json')))
+        print('WARNING: can\'t find results.json file at ', output_dir)
     return {'train_losses': [], 'train_accs': [], 'val_accs': []}
 
 def train(model, optimizer, scheduler, train_loader, val_loader, args, starting_stats=None):
