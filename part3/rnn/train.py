@@ -106,7 +106,8 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args):
                 train_acc = train_acc_accumulator / train_samples_accumulator if train_samples_accumulator > 0 else 0
                 train_loss = train_loss_accumulator / (step + 1)
                 val_loss, val_acc = evaluate(model, val_loader, args)
-                print(f'Step {step} | Samples {total_samples_processed} | Train acc: {train_acc} | Val loss: {val_loss} | Val acc: {val_acc} | learning rate: {scheduler.get_last_lr()[0]}')
+                lr = scheduler.optimizer.param_groups[0]['lr']
+                print(f'Step {step} | Samples {total_samples_processed} | Train acc: {train_acc} | Val loss: {val_loss} | Val acc: {val_acc} | learning rate: {lr}')
                 if val_acc > best_val_acc:
                     torch.save(model.state_dict(), f'{args.output_dir}/model_best.pt')
                     best_val_acc = val_acc
