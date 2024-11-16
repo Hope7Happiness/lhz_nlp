@@ -1,1 +1,2 @@
-rsync -av . mitgpu:/nobackup/users/zhh24/dev/LHZ_NLP --exclude=assets --exclude=__pycache__ --exclude=output_transformer_0.5_5000000 --exclude="*.ipynb" --exclude="*.log"
+# rsync -av . mitgpu:/nobackup/users/zhh24/dev/LHZ_NLP --exclude=assets --exclude=__pycache__ --exclude=output_transformer_0.5_5000000 --exclude="*.ipynb" --exclude="*.log"
+rsync -av . satori_djq:/nobackup/users/jqdai/zhh/dev/LHZ_NLP --exclude=assets --exclude=__pycache__ --exclude=output_transformer_0.5_5000000 --exclude="*.ipynb" --exclude="*.log"

@@ -1,0 +1,3 @@
+# rsync -av ./modeling_llama.py satori_djq:/nobackup/users/jqdai/anaconda3/envs/ZHH/lib/python3.7/site-packages/transformers/models/llama/modeling_llama.py
+# rsync -av ./modeling_llama.py satori_sqa:/nobackup/users/sqa24/anaconda3/envs/wgt/lib/python3.7/site-packages/transformers/models/llama/modeling_llama.py
+rsync -av ./modeling_llama.py satori_ybw:/nobackup/users/bowenyu/anaconda3/envs/ZHH/lib/python3.7/site-packages/transformers/models/llama/modeling_llama.py

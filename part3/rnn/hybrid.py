@@ -20,7 +20,8 @@ from mamba_ssm.modules.mlp import GatedMLP
 try:
     from mamba_ssm.ops.triton.layer_norm import RMSNorm, layer_norm_fn, rms_norm_fn
 except ImportError:
-    RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
+    # RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
+    from mamba_ssm.modules.common_fallback import RMSNorm, layer_norm_fn, rms_norm_fn
 # def create_block(
 #     d_model,
 #     d_intermediate,
@@ -163,7 +164,8 @@ class HybridMixerModel(nn.Module):
         device=None,
         dtype=None,
     ) -> None:
-        factory_kwargs = {"device": device, "dtype": dtype}
+        # factory_kwargs = {"device": device, "dtype": dtype}
+        factory_kwargs = dict()
         super().__init__()
         self.residual_in_fp32 = residual_in_fp32
 
@@ -207,7 +209,9 @@ class HybridMixerModel(nn.Module):
                 **(initializer_cfg if initializer_cfg is not None else {}),
             )
         )
-        self.attention = LlamaDecoderLayer(llama_cfg, layer_idx = 0)
+        self.attention = LlamaDecoderLayer(llama_cfg)
+        # print(help(LlamaDecoderLayer))
+        # self.attention = LlamaDecoderLayer(llama_cfg, layer_idx = 0)
     def allocate_inference_cache(self, batch_size, max_seqlen, dtype=None, **kwargs):
         return {
             i: layer.allocate_inference_cache(batch_size, max_seqlen, dtype=dtype, **kwargs)
@@ -262,7 +266,8 @@ class HybridMambaLMHeadModel(nn.Module, GenerationMixin):
         residual_in_fp32 = config.residual_in_fp32
         fused_add_norm = config.fused_add_norm
         pad_vocab_size_multiple = config.pad_vocab_size_multiple
-        factory_kwargs = {"device": device, "dtype": dtype}
+        # factory_kwargs = {"device": device, "dtype": dtype}
+        factory_kwargs = dict()
 
         super().__init__()
         if vocab_size % pad_vocab_size_multiple != 0:
@@ -306,8 +311,9 @@ class HybridMambaLMHeadModel(nn.Module, GenerationMixin):
         if num_last_tokens > 0:
             hidden_states = hidden_states[:, -num_last_tokens:]
         lm_logits = self.lm_head(hidden_states)
-        CausalLMOutput = namedtuple("CausalLMOutput", ["logits"])
-        return CausalLMOutput(logits=lm_logits)
+        # CausalLMOutput = namedtuple("CausalLMOutput", ["logits"])
+        # return CausalLMOutput(logits=lm_logits)
+        return lm_logits
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name, device=None, dtype=None, **kwargs):

@@ -68,3 +68,12 @@ train_rnn_zhh_2_test:
 
 train_rnn_zhh_2_reload_test:
 	bash reload.sh rnn 1 10000 0.0003 1024 /nobackup/users/jzc_2007/staging/20241115__230706_LHZ_NLP_dde4ce2-dirty/output_rnn_1_5000
+
+train_hybrid_zhh_1:
+	bash train.sh hybrid 0.5 5000000 0.0001 1024
+
+train_hybrid_zhh_2:
+	bash train.sh hybrid 1 5000000 0.0001 512
+
+train_hybrid_zhh_3:
+	bash train.sh hybrid 2 5000000 0.0001 256
