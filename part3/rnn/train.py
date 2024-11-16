@@ -73,29 +73,59 @@ def evaluate(model, val_loader, args):
     model.train()
     return total_loss / len(val_loader), total_correct_samples / total_samples
 
-def train(model, optimizer, scheduler, train_loader, val_loader, args):
+def save_to_status_file(data, output_dir):
+    with open(f'{output_dir}/status.json', 'w') as f:
+        json.dump(data, f)
+        
+def get_from_status_file(output_dir):
+    if os.path.exists(f'{output_dir}/status.json'):
+        with open(f'{output_dir}/status.json', 'r') as f:
+            return json.load(f)
+    raise NotImplementedError
+
+def remove_additional_checkpt(output_dir):
+    for file in os.listdir(output_dir):
+        if file.endswith('.pt') and 'best' not in file:
+            os.remove(os.path.join(output_dir, file))
+
+def load_logs_from_json(output_dir):
+    if os.path.exists(os.path.join(output_dir, 'results.json')):
+        return json.load(open(os.path.join(output_dir, 'results.json')))
+    print('WARNING: can\'t find results.json file at ', output_dir)
+    return {'train_losses': [], 'train_accs': [], 'val_accs': []}
+
+def train(model, optimizer, scheduler, train_loader, val_loader, args, starting_stats=None):
     model = nn.DataParallel(model)
     model.train()
     print('start training')
-    total_samples_processed = 0
-    step = 0
-    train_loss_accumulator = 0
-    train_acc_accumulator = 0
-    train_samples_accumulator = 0
-    best_val_acc = -1
-    train_losses = []
-    train_accs = []
-    val_accs = []
+    if starting_stats is None:
+        total_samples_processed = 0
+        step = 0
+        train_loss_accumulator = 0
+        train_acc_accumulator = 0
+        train_samples_accumulator = 0
+    else:
+        total_samples_processed = starting_stats['total_samples_processed']
+        step = starting_stats['step']
+        train_loss_accumulator = starting_stats['train_loss_accumulator']
+        train_acc_accumulator = starting_stats['train_acc_accumulator']
+        train_samples_accumulator = starting_stats['train_samples_accumulator']    
+    
+    past_results = load_logs_from_json(args.previous_model_path)
+    train_losses = past_results['train_losses']
+    train_accs = past_results['train_accs']
+    val_accs = past_results['val_accs']
+    best_val_acc = max(val_accs) if val_accs else 0
     # pbar = tqdm(total=(args.total_training_samples // args.batch_size))
     criterion = nn.CrossEntropyLoss(ignore_index=-100)
     while total_samples_processed < args.total_training_samples:
-        for i,batch in enumerate(train_loader):
+        for _,batch in zip(range(len(train_loader)),train_loader):
             input_ids, attention_mask, labels = batch['input_ids'], batch['attention_mask'], batch['labels']
             batch_size = input_ids.size(0)
             if total_samples_processed > args.total_training_samples:
                 break
 
-            with Timer(f'Batch {i}'):
+            with Timer(f'Batch {step}'):
                 # Forward and backward passes
                 model.zero_grad()
                 optimizer.zero_grad()
@@ -135,6 +165,18 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args):
                 if val_acc > best_val_acc:
                     torch.save(model.state_dict(), f'{args.output_dir}/model_best.pt')
                     best_val_acc = val_acc
+                # save checkpoint
+                save_to_status_file({
+                    'total_samples_processed': total_samples_processed,
+                    'step': step,
+                    'train_loss_accumulator': train_loss_accumulator,
+                    'train_acc_accumulator': train_acc_accumulator,
+                    'train_samples_accumulator': train_samples_accumulator,
+                }, args.output_dir)
+                remove_additional_checkpt(args.output_dir)
+                torch.save(model.state_dict(), f'{args.output_dir}/model_{step}.pt')
+                print('Checkpoint saved successfully at step:', step,'!')
+                
                 if args.report_to_wandb:
                     wandb.log({"Step": step, "Train Loss": train_loss, "Train Accuracy": train_acc, "Validation Loss": val_loss, "Validation Accuracy": val_acc}, step=step)
                 train_losses.append(train_loss)
@@ -168,10 +210,11 @@ def main():
     if args.report_to_wandb:
         wandb.init()
     set_seed(args.seed)
+    print('Loading train set...')
     train_dataset = load_dataset(args.dataset_dir)
+    print('Loading val set...')
     val_dataset = load_dataset(os.path.join(args.dataset_dir, 'val'))
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+
     if args.model_type == 'transformer':
         if args.model_config_path:
             config = json.load(open(args.model_config_path))
@@ -231,9 +274,24 @@ def main():
             )
     else:
         raise NotImplementedError
+    
+    starting_stats = None
     if args.previous_model_path is not None and os.path.exists(args.previous_model_path):
-        print("Loading...")
-        model.load_state_dict(torch.load(args.previous_model_path))
+        print("Loading model from previous checkpoint", args.previous_model_path)
+        files = os.listdir(args.previous_model_path)
+        model_path = [file for file in files if file.endswith('.pt')][0]
+        print('Find a model file called:', model_path)
+        state_dict_with_module = torch.load(os.path.join(args.previous_model_path, model_path))
+        model.load_state_dict({k.replace('module.', ''): v for k, v in state_dict_with_module.items()})
+        # load status
+        starting_stats = get_from_status_file(args.previous_model_path)
+        n_batch = starting_stats['step']
+        print('Last train time proceed to batch number:', n_batch)
+        train_dataset.set_start_idx(n_batch)
+        
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+        
     model = model.to(device=args.device, dtype=torch.float32)
     print('model is:',model)
     val_loss, val_acc = evaluate(model, val_loader, args)
@@ -247,7 +305,7 @@ def main():
     )
     if args.output_dir:
         os.makedirs(args.output_dir, exist_ok=True)
-    train(model, optimizer, scheduler, train_loader, val_loader, args)
+    train(model, optimizer, scheduler, train_loader, val_loader, args, starting_stats=starting_stats)
 
 if __name__ == '__main__':
     main()

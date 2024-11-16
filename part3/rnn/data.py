@@ -8,7 +8,7 @@ from typing import List
 import os
 
 class IsTreeDataset(Dataset):
-    def __init__(self, n_nodes, graph_type='binary', use_cot=True, use_retrieval=True, cycle_shut_down=True, n_samples=None, add_idle_tokens=0, pad = 'right'):
+    def __init__(self, n_nodes, graph_type='binary', use_cot=True, use_retrieval=True, cycle_shut_down=True, n_samples=None, add_idle_tokens=0, pad = 'right', start_idx=0):
         self.n_nodes = n_nodes
         self.data = []
         self.tokenized_data = []
@@ -21,16 +21,23 @@ class IsTreeDataset(Dataset):
         self.add_idle_tokens = add_idle_tokens
         self.use_retrieval = use_retrieval
         self.pad = pad
+        self.start_idx = start_idx
         if n_samples:
             self.generate(n_samples)
+        print('The dataset start at index:', self.start_idx)
     
     def __len__(self):
-        return self.n_samples
+        return self.n_samples - self.start_idx
     
     def __getitem__(self, idx):
+        idx = idx + self.start_idx
         return {'input_ids': self.input_ids[idx],
                 'attention_mask': self.attention_mask[idx],
                 'labels': self.labels[idx]}
+        
+    def set_start_idx(self, start_idx):
+        self.start_idx = start_idx
+        print('Setting start index to', self.start_idx)
     
     def generate(self, n_samples):
         for i in tqdm(range(n_samples)):
@@ -365,8 +372,8 @@ class IsTreeDataset(Dataset):
         self.tokenized_data = [self.input_ids[i] for i in range(self.n_samples)]
         self.tokenized_labels = [(self.input_ids[i][-1] == self.vocab['[TRUE]']) for i in range(self.n_samples)]
 
-def load_dataset(input_dir):
-    dataset = IsTreeDataset(1, 'binary', True, False, None)
+def load_dataset(input_dir, start_idx=0):
+    dataset = IsTreeDataset(1, 'binary', True, False, None, start_idx=start_idx)
     dataset.load(input_dir)
     return dataset
 
