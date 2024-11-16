@@ -53,8 +53,9 @@ def evaluate(model, val_loader, args):
             # labels = labels.to(args.device)
             if args.model_type == 'transformer':
                 outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-                loss = outputs.loss
+                loss = outputs.loss.mean(dim=0)
                 logits = outputs.logits
+                labels = labels.to(args.device)
             else:
                 logits = model(input_ids)
                 labels = labels.to(args.device)
@@ -136,7 +137,8 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args, starting_
                 if args.model_type == 'transformer':
                     outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
                     logits = outputs.logits
-                    loss = outputs.loss
+                    loss = outputs.loss.mean(dim=0)
+                    labels = labels.to(args.device)
                 else:
                     logits = model(input_ids)
                     labels = labels.to(args.device)

@@ -77,3 +77,6 @@ train_hybrid_zhh_2:
 
 train_hybrid_zhh_3:
 	bash train.sh hybrid 2 5000000 0.0001 256
+
+train_transformer_sanity:
+	bash train.sh transformer 0.5 5000000 0.0001 1024
