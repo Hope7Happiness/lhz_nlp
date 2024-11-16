@@ -10,7 +10,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 from tqdm import tqdm
-import wandb
+# import wandb
 import os
 import json
 
@@ -18,38 +18,47 @@ from utils import set_seed, parse_args
 from data import load_dataset, IsTreeDataset
 from model import get_transformer_model, get_rnn_model, get_hybrid_model
 
+open('eval.log', 'w').close()
+def print(*args, **kwargs):
+    with open('eval.log', 'a') as f:
+        __builtins__.print(*args, **kwargs, file=f)
+
 @torch.no_grad()
 def evaluate(model, val_loader, args, log_file=None):
+    # if not isinstance(model, nn.DataParallel):
+    #     model = nn.DataParallel(model)
     model.eval()
     total_loss = 0
     total_correct_samples = 0
     total_samples = 0
     with torch.no_grad():
         criterion = nn.CrossEntropyLoss(ignore_index=-100)
-        for batch in tqdm(val_loader, total=len(val_loader)):
+        for batch in val_loader:
+        # for batch in tqdm(val_loader, total=len(val_loader)):
             input_ids, attention_mask, labels = batch['input_ids'], batch['attention_mask'], batch['labels']
             input_ids = input_ids.to(args.device)
             attention_mask = attention_mask.to(args.device)
             labels = labels.to(args.device)
             if args.model_type == 'transformer':
                 outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-                loss = outputs.loss
+                loss = outputs.loss.mean(dim=0)
                 logits = outputs.logits
+                # labels = labels.to(args.device)
             else:
-                logits = model(input_ids)[0]
+                logits = model(input_ids)
+                # labels = labels.to(args.device)
                 loss = criterion(logits[..., :-1, :].reshape(-1, logits.size(-1)), labels[..., 1:].reshape(-1))
                 
             logits = logits[..., :-1, :].argmax(dim=-1)
             total_loss += loss.item()
+
             mask = labels[..., 1:] != -100
-            if log_file is not None:
-                file = open(log_file, 'a')
-                for i in range(logits.size(0)):
-                    file.write(f'input: {input_ids[i]}\n')
-                    file.write(f'output: {logits[i]}\n')
-                    file.write(f'label: {labels[i]}\n')
-                    file.write(f'mask: {mask[i]}\n')
-                    file.write('\n')
+            
+            # Compute accuracy per sample
+            print('logits:', logits)
+            print('labels:', labels[..., 1:])
+            print('mask:', mask)
+            print('~mask:', ~mask)
             sample_acc = (logits == labels[..., 1:]) | ~mask  # True for correct predictions and ignored tokens
             sample_acc = sample_acc.all(dim=-1)  # Check if all tokens in a sample are correct/ignored
             total_correct_samples += sample_acc.sum().item()
@@ -180,7 +189,8 @@ def main():
             )
     model = model.to(device=args.device, dtype=torch.float32)
     print(model)
-    model.load_state_dict(torch.load(args.model_dir))
+    state_dict_with_module = torch.load(args.model_dir)
+    model.load_state_dict({k.replace('module.', ''): v for k, v in state_dict_with_module.items()})
     #model = model.from_pretrained(args.model_dir)
     if args.model_type == 'rnn':
         model.lm_head.weight = model.backbone.embedding.weight
@@ -188,9 +198,11 @@ def main():
         model.lm_head.weight = model.model.embed_tokens.weight
     model = model.to(device=args.device, dtype=torch.float32)
     log_file = args.output_dir + '/log.txt' if args.output_dir is not None else None
+    print('--- start evaluating ---')
     val_loss , val_acc = evaluate(model, val_loader, args, log_file)
-    val_acc_cot = evaluate_through_generation(model, val_loader, val_dataset, args)
     print(f'Initial | val loss: {val_loss} | val acc: {val_acc}')
+    print('--- start evaluating CoT ---')
+    val_acc_cot = evaluate_through_generation(model, val_loader, val_dataset, args)
     print(f'COT | val acc: {val_acc_cot}')
     json.dump({
         'val_acc': val_acc,

@@ -79,4 +79,7 @@ train_hybrid_zhh_3:
 	bash train.sh hybrid 2 5000000 0.0001 256
 
 train_transformer_sanity:
-	bash train.sh transformer 0.5 5000000 0.0001 1024
+	bash train.sh transformer 0.5 5000000 0.0001 64
+
+eval_transformer_sanity:
+	bash eval.sh transformer 0.5 /nobackup/users/dcao2028/zhh/staging/20241116__004716_LHZ_NLP_d7f2627-dirty/output_transformer_0.5_5000000/model_4884.pt 5000000
