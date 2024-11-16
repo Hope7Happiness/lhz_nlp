@@ -1,3 +1,5 @@
+echo !!! Doing RELOAD !!!
+echo Load from $6
 echo "model_type: $1"
 echo "dataset_dir: ./data/rnn/cot_binary_32_1000000_right"
 echo "output_dir: ./output_$1_$2_$3"
@@ -12,6 +14,7 @@ python3 rnn/train.py \
     --model_config_path ./configs/$2m_transformer.json \
     --batch_size $5 \
     --total_training_samples $3 \
-    --lr $4
+    --lr $4 \
+    --previous_model_path $6
 
 # --dataset_dir /nobackup/users/zhh24/dev/LHZ_NLP/data/rnn/cot_binary_32_1000000_right \

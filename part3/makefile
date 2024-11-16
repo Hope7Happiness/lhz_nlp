@@ -56,3 +56,15 @@ eval_all_transformer_2:
 
 train_rnn_zhh_1:
 	bash train.sh rnn 0.5 5000000 0.0003 2048
+
+train_rnn_zhh_2:
+	bash train.sh rnn 1 5000000 0.0003 1024
+
+train_rnn_zhh_3:
+	bash train.sh rnn 2 5000000 0.0003 2048
+
+train_rnn_zhh_2_test:
+	bash train.sh rnn 1 50 0.0003 1024
+
+train_rnn_zhh_2_reload_test:
+	
