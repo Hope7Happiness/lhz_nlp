@@ -98,25 +98,25 @@ train_hybrid_zhh_1:
 #	bash train.sh hybrid 0.5 5000000 0.0001 1024
 
 # Can this work? TODO
-	bash train.sh hybrid 0.5 5000000 0.002 256
+	bash reload_multiprocess.sh hybrid 0.5 5000000 0.002 256
 
 train_hybrid_zhh_2:
 # This doesn't work
 #	bash train.sh hybrid 1 5000000 0.0001 512
 
 # Can this work? TODO
-	bash train.sh hybrid 1 5000000 0.002 128
+	bash reload_multiprocess.sh hybrid 1 5000000 0.002 128
 
 train_hybrid_zhh_3:
 # This doesn't work
 #	bash train.sh hybrid 2 5000000 0.0001 256
 
 # Can this work? TODO
-	bash train.sh hybrid 2 5000000 0.002 64
+	bash reload_multiprocess.sh hybrid 2 5000000 0.002 64
 
 train_transformer_sanity:
 # This works
-	bash train.sh transformer 0.5 5000000 0.001 256
+	bash train.sh transformer 0.5 5000000 0.004 512
 
 # Can this work? TODO
 #	bash train.sh transformer 0.5 5000000 0.002 512

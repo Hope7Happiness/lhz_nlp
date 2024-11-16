@@ -22,16 +22,15 @@ stage_common_func(){
 
 # Hybrid 0.5
 # python ~/staging.py --exe train_hybrid_zhh_1 --remote_url satori_sqa --remote_stage_dir /nobackup/users/sqa24/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env wgt
-stage_common_func train_hybrid_zhh_1 satori_sqa /nobackup/users/sqa24/zhh/staging wgt 1
+# stage_common_func train_hybrid_zhh_1 satori_sqa /nobackup/users/sqa24/zhh/staging wgt 3
 
 # Hybrid 1
 # python ~/staging.py --exe train_hybrid_zhh_2 --remote_url satori_djq --remote_stage_dir /nobackup/users/jqdai/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env ZHH
-stage_common_func train_hybrid_zhh_2 satori_djq /nobackup/users/jqdai/zhh/staging ZHH 1
+# stage_common_func train_hybrid_zhh_2 satori_djq /nobackup/users/jqdai/zhh/staging ZHH 3
 
 # Hybrid 2
 # python ~/staging.py --exe train_hybrid_zhh_3 --remote_url satori_ybw --remote_stage_dir /nobackup/users/bowenyu/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env ZHH
-stage_common_func train_hybrid_zhh_3 satori_ybw /nobackup/users/bowenyu/zhh/staging ZHH 1
+# stage_common_func train_hybrid_zhh_3 satori_ybw /nobackup/users/bowenyu/zhh/staging ZHH 3
 
 # Transformer sanity
-# python ~/staging.py --exe train_transformer_sanity --remote_url satori_da --remote_stage_dir /nobackup/users/dcao2028/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env ZHH
-# stage_common_func train_transformer_sanity satori_da /nobackup/users/dcao2028/zhh/staging ZHH 1
+stage_common_func train_transformer_sanity satori_da /nobackup/users/dcao2028/zhh/staging ZHH 1

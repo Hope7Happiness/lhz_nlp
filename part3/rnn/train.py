@@ -120,6 +120,9 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args, starting_
     best_val_acc = max(val_accs) if val_accs else 0
     # pbar = tqdm(total=(args.total_training_samples // args.batch_size))
     criterion = nn.CrossEntropyLoss(ignore_index=-100)
+    if total_samples_processed >= args.total_training_samples:
+        print('Already trained for', total_samples_processed, 'samples', 'so exiting...')
+        exit(2)
     while total_samples_processed < args.total_training_samples:
         for _,batch in zip(range(len(train_loader)),train_loader):
             input_ids, attention_mask, labels = batch['input_ids'], batch['attention_mask'], batch['labels']
@@ -301,7 +304,7 @@ def main():
     model = model.to(device=args.device, dtype=torch.float32)
     print('model is:',model)
     val_loss, val_acc = evaluate(model, val_loader, args)
-    print(f'Initial | val loss: {val_loss} | val acc: {val_acc}')
+    print(f'Initial (may not be step 0) | val loss: {val_loss} | val acc: {val_acc}')
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = get_scheduler(
         'cosine',
