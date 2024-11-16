@@ -2,7 +2,7 @@
 
 import torch
 import torch.nn.functional as F
-from mamba_ssm.utils.torch import custom_bwd, custom_fwd
+# from mamba_ssm.utils.torch import custom_bwd, custom_fwd
 
 from einops import rearrange, repeat
 
@@ -14,7 +14,7 @@ except ImportError:
     causal_conv1d_cuda = None
 
 #import selective_scan_cuda
-
+from mamba_ssm.modules.common_fallback import silu
 
 class SelectiveScanFn(torch.autograd.Function):
 
@@ -152,7 +152,8 @@ def selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta
     y = torch.stack(ys, dim=2) # (batch dim L)
     out = y if D is None else y + u * rearrange(D, "d -> d 1")
     if z is not None:
-        out = out * F.silu(z)
+        # out = out * F.silu(z)
+        out = out * silu(z)
     out = out.to(dtype=dtype_in)
     return out if not return_last_state else (out, last_state)
 
@@ -160,7 +161,7 @@ def selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta
 class MambaInnerFn(torch.autograd.Function):
 
     @staticmethod
-    @custom_fwd
+    # @custom_fwd
     def forward(ctx, xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,
                 out_proj_weight, out_proj_bias,
                 A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,
@@ -236,7 +237,7 @@ class MambaInnerFn(torch.autograd.Function):
         return F.linear(rearrange(out_z, "b d l -> b l d"), out_proj_weight, out_proj_bias)
 
     @staticmethod
-    @custom_bwd
+    # @custom_bwd
     def backward(ctx, dout):
         # dout: (batch, seqlen, dim)
         assert causal_conv1d_cuda is not None, "causal_conv1d_cuda is not available. Please install causal-conv1d."

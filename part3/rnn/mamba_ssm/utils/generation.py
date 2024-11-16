@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from torch import Tensor
-from torch.profiler import ProfilerActivity, profile, record_function
+# from torch.profiler import ProfilerActivity, profile, record_function
 from transformers.generation import GreedySearchDecoderOnlyOutput, SampleDecoderOnlyOutput, TextStreamer
 
 
@@ -117,7 +117,8 @@ def sample(logits, top_k=1, top_p=0.0, min_p=0.0, temperature=1.0):
             )
 
 
-@torch.inference_mode()
+# @torch.inference_mode()
+@torch.no_grad()
 def decode(
     input_ids,
     model,
@@ -280,7 +281,8 @@ class DecodingCGCache:
     run: Optional[Callable] = None
 
 
-@torch.inference_mode()
+# @torch.inference_mode()
+@torch.no_grad()
 def update_graph_cache(
     model,
     cache,

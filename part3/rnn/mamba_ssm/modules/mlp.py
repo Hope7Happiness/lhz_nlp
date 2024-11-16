@@ -2,6 +2,8 @@
 from torch import nn
 from torch.nn import functional as F
 
+def silu(x):
+    return x * F.sigmoid(x)
 
 class GatedMLP(nn.Module):
     def __init__(
@@ -9,7 +11,7 @@ class GatedMLP(nn.Module):
         in_features,
         hidden_features=None,
         out_features=None,
-        activation=F.silu,
+        activation=silu,
         bias=False,
         multiple_of=128,
         device=None,

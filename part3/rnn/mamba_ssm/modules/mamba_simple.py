@@ -27,6 +27,7 @@ try:
 except ImportError:
     RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
 
+from mamba_ssm.modules.common_fallback import SiLU
 
 class Mamba(nn.Module):
     def __init__(
@@ -48,7 +49,8 @@ class Mamba(nn.Module):
         device=None,
         dtype=None,
     ):
-        factory_kwargs = {"device": device, "dtype": dtype}
+        # factory_kwargs = {"device": device, "dtype": dtype}
+        factory_kwargs = dict()
         super().__init__()
         self.d_model = d_model
         self.d_state = d_state
@@ -72,7 +74,8 @@ class Mamba(nn.Module):
         )
 
         self.activation = "silu"
-        self.act = nn.SiLU()
+        # self.act = nn.SiLU()
+        self.act = SiLU()
 
         self.x_proj = nn.Linear(
             self.d_inner, self.dt_rank + self.d_state * 2, bias=False, **factory_kwargs

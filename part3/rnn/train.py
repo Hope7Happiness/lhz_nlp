@@ -210,7 +210,7 @@ def main():
         print("Loading...")
         model.load_state_dict(torch.load(args.previous_model_path))
     model = model.to(device=args.device, dtype=torch.float32)
-    print(model)
+    print('model is:',model)
     val_loss, val_acc = evaluate(model, val_loader, args)
     print(f'Initial | val loss: {val_loss} | val acc: {val_acc}')
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)

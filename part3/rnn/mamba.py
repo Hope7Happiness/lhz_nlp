@@ -19,7 +19,7 @@ from mamba_ssm.modules.mlp import GatedMLP
 try:
     from mamba_ssm.ops.triton.layer_norm import RMSNorm, layer_norm_fn, rms_norm_fn
 except ImportError:
-    RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
+    from mamba_ssm.modules.common_fallback import RMSNorm, layer_norm_fn, rms_norm_fn
 
 
 def create_block(
@@ -111,7 +111,8 @@ class MixerModel(nn.Module):
         super().__init__()
         self.residual_in_fp32 = residual_in_fp32
 
-        self.embedding = nn.Embedding(vocab_size, d_model, **factory_kwargs)
+        self.embedding = nn.Embedding(vocab_size, d_model,)
+        # self.embedding = nn.Embedding(vocab_size, d_model, **factory_kwargs)
 
         # We change the order of residual and layer norm:
         # Instead of LN -> Attn / MLP -> Add, we do:
@@ -200,7 +201,8 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
         residual_in_fp32 = config.residual_in_fp32
         fused_add_norm = config.fused_add_norm
         pad_vocab_size_multiple = config.pad_vocab_size_multiple
-        factory_kwargs = {"device": device, "dtype": dtype}
+        # factory_kwargs = {"device": device, "dtype": dtype}
+        factory_kwargs = dict()
 
         super().__init__()
         if vocab_size % pad_vocab_size_multiple != 0:

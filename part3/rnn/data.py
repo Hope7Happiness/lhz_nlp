@@ -307,13 +307,15 @@ class IsTreeDataset(Dataset):
         else:
             # right pad
             for i in tqdm(range(len(self.tokenized_data))):
-                self.attention_mask.append(torch.cat((torch.tensor([1] * len(self.tokenized_data[i])), torch.tensor([0] * (pad_len - len(self.tokenized_data[i]))))))
+                self.attention_mask.append(torch.cat((torch.tensor([1] * len(self.tokenized_data[i])), torch.tensor([0] * (pad_len - len(self.tokenized_data[i])), dtype=torch.long))))
                 padding_position = len(self.tokenized_data[i])
-                self.tokenized_data[i] = torch.cat((self.tokenized_data[i], torch.tensor([self.vocab['[PAD]']] * (pad_len - len(self.tokenized_data[i])))))
-                pos_of_first_eos = torch.where(self.tokenized_data[i] == self.vocab['[EOS]'])[0][0]
-                self.labels.append(torch.cat((torch.tensor([-100] * (pos_of_first_eos + 1)), 
-                                              self.tokenized_data[i][pos_of_first_eos+1:padding_position], 
-                                              torch.tensor([-100] * (pad_len - padding_position)))))
+                self.tokenized_data[i] = torch.cat((self.tokenized_data[i], torch.tensor([self.vocab['[PAD]']] * (pad_len - len(self.tokenized_data[i])),dtype=torch.long)))
+                pos_of_first_eos = torch.where(self.tokenized_data[i] == self.vocab['[EOS]'])[0][0].item()
+                self.labels.append(torch.cat((
+                    torch.tensor([-100] * (pos_of_first_eos + 1)), 
+                    self.tokenized_data[i][pos_of_first_eos+1:padding_position], 
+                    torch.tensor([-100] * (pad_len - padding_position),dtype=torch.long)
+                )))
                 pos_of_end_search = torch.where(self.tokenized_data[i] == self.vocab['[ENDSEARCH]'])[0] + 1
                 self.labels[i][pos_of_end_search] = -100
                 pos_of_unk_tokens = torch.where(self.tokenized_data[i] == self.vocab['[UNK]'])[0]
