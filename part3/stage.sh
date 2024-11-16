@@ -14,4 +14,7 @@
 # python ~/staging.py --exe train_hybrid_zhh_2 --remote_url satori_djq --remote_stage_dir /nobackup/users/jqdai/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env ZHH
 
 # Hybrid 2
-python ~/staging.py --exe train_hybrid_zhh_3 --remote_url satori_ybw --remote_stage_dir /nobackup/users/bowenyu/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env ZHH
+# python ~/staging.py --exe train_hybrid_zhh_3 --remote_url satori_ybw --remote_stage_dir /nobackup/users/bowenyu/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env ZHH
+
+# Transformer sanity
+python ~/staging.py --exe train_transformer_sanity --remote_url satori_da --remote_stage_dir /nobackup/users/dcao2028/zhh/staging --task_name LHZ_NLP --gpus 4 --time 8:00:00 --exclusive --conda_env ZHH
