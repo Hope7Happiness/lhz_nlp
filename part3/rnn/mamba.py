@@ -246,7 +246,8 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
             hidden_states = hidden_states[:, -num_last_tokens:]
         lm_logits = self.lm_head(hidden_states)
         CausalLMOutput = namedtuple("CausalLMOutput", ["logits"])
-        return CausalLMOutput(logits=lm_logits)
+        # return CausalLMOutput(logits=lm_logits)
+        return lm_logits
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name, device=None, dtype=None, **kwargs):

@@ -54,3 +54,5 @@ eval_all_transformer_2:
 	bash eval.sh transformer 9 model_best.pt 5000000
 	bash eval.sh transformer 0.25 model_best.pt 5000000
 
+train_rnn_zhh_1:
+	bash train.sh rnn 0.5 5000000 0.0003 2048

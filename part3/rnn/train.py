@@ -18,25 +18,46 @@ from utils import set_seed, parse_args
 from data import load_dataset, IsTreeDataset
 from model import get_transformer_model, get_rnn_model, get_hybrid_model
 
+open('train.log', 'w').close()
+def print(*args, **kwargs):
+    with open('train.log', 'a') as f:
+        __builtins__.print(*args, **kwargs, file=f)
+
+import time
+class Timer:
+    def __init__(self,desc):
+        self.desc = desc
+        
+    def __enter__(self):
+        self.start = time.time()
+        return self
+    
+    def __exit__(self, *args):
+        print(f'{self.desc} took {time.time() - self.start} seconds')
+
 @torch.no_grad()
 def evaluate(model, val_loader, args):
+    if not isinstance(model, nn.DataParallel):
+        model = nn.DataParallel(model)
     model.eval()
     total_loss = 0
     total_correct_samples = 0
     total_samples = 0
     with torch.no_grad():
         criterion = nn.CrossEntropyLoss(ignore_index=-100)
-        for batch in tqdm(val_loader, total=len(val_loader)):
+        for batch in val_loader:
+        # for batch in tqdm(val_loader, total=len(val_loader)):
             input_ids, attention_mask, labels = batch['input_ids'], batch['attention_mask'], batch['labels']
-            input_ids = input_ids.to(args.device)
-            attention_mask = attention_mask.to(args.device)
-            labels = labels.to(args.device)
+            # input_ids = input_ids.to(args.device)
+            # attention_mask = attention_mask.to(args.device)
+            # labels = labels.to(args.device)
             if args.model_type == 'transformer':
                 outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
                 loss = outputs.loss
                 logits = outputs.logits
             else:
-                logits = model(input_ids)[0]
+                logits = model(input_ids)
+                labels = labels.to(args.device)
                 loss = criterion(logits[..., :-1, :].reshape(-1, logits.size(-1)), labels[..., 1:].reshape(-1))
                 
             logits = logits[..., :-1, :].argmax(dim=-1)
@@ -53,6 +74,7 @@ def evaluate(model, val_loader, args):
     return total_loss / len(val_loader), total_correct_samples / total_samples
 
 def train(model, optimizer, scheduler, train_loader, val_loader, args):
+    model = nn.DataParallel(model)
     model.train()
     print('start training')
     total_samples_processed = 0
@@ -64,31 +86,33 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args):
     train_losses = []
     train_accs = []
     val_accs = []
-    pbar = tqdm(total=(args.total_training_samples // args.batch_size))
+    # pbar = tqdm(total=(args.total_training_samples // args.batch_size))
     criterion = nn.CrossEntropyLoss(ignore_index=-100)
     while total_samples_processed < args.total_training_samples:
-        for batch in train_loader:
+        for i,batch in enumerate(train_loader):
             input_ids, attention_mask, labels = batch['input_ids'], batch['attention_mask'], batch['labels']
             batch_size = input_ids.size(0)
             if total_samples_processed > args.total_training_samples:
                 break
 
-            # Forward and backward passes
-            model.zero_grad()
-            optimizer.zero_grad()
-            input_ids = input_ids.to(args.device)
-            attention_mask = attention_mask.to(args.device)
-            labels = labels.to(args.device)
-            if args.model_type == 'transformer':
-                outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-                logits = outputs.logits
-                loss = outputs.loss
-            else:
-                logits = model(input_ids)[0]
-                loss = criterion(logits[..., :-1, :].reshape(-1, logits.size(-1)), labels[..., 1:].reshape(-1))
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
+            with Timer(f'Batch {i}'):
+                # Forward and backward passes
+                model.zero_grad()
+                optimizer.zero_grad()
+                # input_ids = input_ids.to(args.device)
+                # attention_mask = attention_mask.to(args.device)
+                # labels = labels.to(args.device)
+                if args.model_type == 'transformer':
+                    outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
+                    logits = outputs.logits
+                    loss = outputs.loss
+                else:
+                    logits = model(input_ids)
+                    labels = labels.to(args.device)
+                    loss = criterion(logits[..., :-1, :].reshape(-1, logits.size(-1)), labels[..., 1:].reshape(-1))
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
         
             train_loss_accumulator += loss.item()
             logits = logits[..., :-1, :].detach().argmax(dim=-1)
@@ -125,10 +149,10 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args):
 
             total_samples_processed += batch_size
             step += 1
-            pbar.update(1)
+            # pbar.update(1) 
             if total_samples_processed >= args.total_training_samples:
                 break
-    pbar.close()
+    # pbar.close()
     if args.model_path:
         torch.save(model.state_dict(), args.model_path)
     json.dump({
