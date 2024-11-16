@@ -37,8 +37,6 @@ class Timer:
 
 @torch.no_grad()
 def evaluate(model, val_loader, args):
-    if not isinstance(model, nn.DataParallel):
-        model = nn.DataParallel(model)
     model.eval()
     total_loss = 0
     total_correct_samples = 0
@@ -48,17 +46,15 @@ def evaluate(model, val_loader, args):
         for batch in val_loader:
         # for batch in tqdm(val_loader, total=len(val_loader)):
             input_ids, attention_mask, labels = batch['input_ids'], batch['attention_mask'], batch['labels']
-            # input_ids = input_ids.to(args.device)
-            # attention_mask = attention_mask.to(args.device)
-            # labels = labels.to(args.device)
+            input_ids = input_ids.to(args.device)
+            attention_mask = attention_mask.to(args.device)
+            labels = labels.to(args.device)
             if args.model_type == 'transformer':
                 outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-                loss = outputs.loss.mean(dim=0)
+                loss = outputs.loss
                 logits = outputs.logits
-                labels = labels.to(args.device)
             else:
                 logits = model(input_ids)
-                labels = labels.to(args.device)
                 loss = criterion(logits[..., :-1, :].reshape(-1, logits.size(-1)), labels[..., 1:].reshape(-1))
                 
             logits = logits[..., :-1, :].argmax(dim=-1)
@@ -97,7 +93,6 @@ def load_logs_from_json(output_dir):
     return {'train_losses': [], 'train_accs': [], 'val_accs': []}
 
 def train(model, optimizer, scheduler, train_loader, val_loader, args, starting_stats=None):
-    model = nn.DataParallel(model)
     model.train()
     print('start training')
     if starting_stats is None:
@@ -120,6 +115,9 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args, starting_
     best_val_acc = max(val_accs) if val_accs else 0
     # pbar = tqdm(total=(args.total_training_samples // args.batch_size))
     criterion = nn.CrossEntropyLoss(ignore_index=-100)
+    if total_samples_processed >= args.total_training_samples:
+        print('Already trained for', total_samples_processed, 'samples', 'so exiting...')
+        exit(2)
     while total_samples_processed < args.total_training_samples:
         for _,batch in zip(range(len(train_loader)),train_loader):
             input_ids, attention_mask, labels = batch['input_ids'], batch['attention_mask'], batch['labels']
@@ -131,17 +129,15 @@ def train(model, optimizer, scheduler, train_loader, val_loader, args, starting_
                 # Forward and backward passes
                 model.zero_grad()
                 optimizer.zero_grad()
-                # input_ids = input_ids.to(args.device)
-                # attention_mask = attention_mask.to(args.device)
-                # labels = labels.to(args.device)
+                input_ids = input_ids.to(args.device)
+                attention_mask = attention_mask.to(args.device)
+                labels = labels.to(args.device)
                 if args.model_type == 'transformer':
                     outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
                     logits = outputs.logits
-                    loss = outputs.loss.mean(dim=0)
-                    labels = labels.to(args.device)
+                    loss = outputs.loss
                 else:
                     logits = model(input_ids)
-                    labels = labels.to(args.device)
                     loss = criterion(logits[..., :-1, :].reshape(-1, logits.size(-1)), labels[..., 1:].reshape(-1))
                 loss.backward()
                 optimizer.step()
@@ -301,7 +297,7 @@ def main():
     model = model.to(device=args.device, dtype=torch.float32)
     print('model is:',model)
     val_loss, val_acc = evaluate(model, val_loader, args)
-    print(f'Initial | val loss: {val_loss} | val acc: {val_acc}')
+    print(f'Initial (may not be step 0) | val loss: {val_loss} | val acc: {val_acc}')
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = get_scheduler(
         'cosine',

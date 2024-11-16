@@ -55,28 +55,64 @@ eval_all_transformer_2:
 	bash eval.sh transformer 0.25 model_best.pt 5000000
 
 train_rnn_zhh_1:
-	bash train.sh rnn 0.5 5000000 0.0003 2048
+# This doesn't work
+#	bash train.sh rnn 0.5 5000000 0.0003 2048
+
+# Can this work? TODO
+	bash train.sh rnn 0.5 5000000 0.004 512
 
 train_rnn_zhh_2:
-	bash train.sh rnn 1 5000000 0.0003 1024
+# This doesn't work
+#	bash train.sh rnn 1 5000000 0.0003 1024
+
+# Can this work? TODO
+	bash train.sh rnn 1 5000000 0.004 256
 
 train_rnn_zhh_3:
-	bash train.sh rnn 2 5000000 0.0003 512
+# This doesn't work
+#	bash train.sh rnn 2 5000000 0.0003 512
+
+# Can this work? TODO
+	bash train.sh rnn 2 5000000 0.004 128
+
+train_rnn_zhh_safe_1:
+	bash reload.sh rnn 0.5 5000000 0.0003 64
+
+train_rnn_zhh_safe_2:
+	bash reload.sh rnn 1 5000000 0.0003 64
+
+train_rnn_zhh_safe_3:
+	bash reload.sh rnn 2 5000000 0.0003 64
 
 train_rnn_zhh_2_test:
 	bash train.sh rnn 1 5000 0.0003 1024
 
-train_rnn_zhh_2_reload_test:
-	bash reload.sh rnn 1 10000 0.0003 1024 /nobackup/users/jzc_2007/staging/20241115__230706_LHZ_NLP_dde4ce2-dirty/output_rnn_1_5000
+train_rnn_zhh_2_reload_test_part1:
+	bash reload.sh rnn 1 500 0.0003 64
+
+train_rnn_zhh_2_reload_test_part2:
+	bash reload.sh rnn 1 1000 0.0003 64
 
 train_hybrid_zhh_1:
-	bash train.sh hybrid 0.5 5000000 0.0001 1024
+# This doesn't work
+#	bash train.sh hybrid 0.5 5000000 0.0001 1024
+
+# Can this work? TODO
+	bash train.sh hybrid 0.5 5000000 0.002 256
 
 train_hybrid_zhh_2:
-	bash train.sh hybrid 1 5000000 0.0001 512
+# This doesn't work
+#	bash train.sh hybrid 1 5000000 0.0001 512
+
+# Can this work? TODO
+	bash train.sh hybrid 1 5000000 0.002 128
 
 train_hybrid_zhh_3:
-	bash train.sh hybrid 2 5000000 0.0001 256
+# This doesn't work
+#	bash train.sh hybrid 2 5000000 0.0001 256
+
+# Can this work? TODO
+	bash train.sh hybrid 2 5000000 0.002 64
 
 train_transformer_sanity:
 # This works
